@@ -1,6 +1,16 @@
+import 'dotenv/config';
 import { PrismaClient, RoomType, Resource, Role } from '../generated/prisma';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const databaseUrl = process.env.DATABASE_URL;
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL não está definida no ambiente.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: databaseUrl }),
+});
 
 async function main() {
   console.log('Seeding database...');
