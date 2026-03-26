@@ -27,8 +27,8 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 1.1 Inicialização do Projeto
 
-- [ ] Criar projeto NestJS via CLI: `npx @nestjs/cli new reservas-api`
-- [ ] Instalar dependências base:
+- [x] Criar projeto NestJS via CLI: `npx @nestjs/cli new reservas-api`
+- [x] Instalar dependências base:
   ```
   @nestjs/config
   @nestjs/swagger
@@ -40,23 +40,23 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
   axios
   xlsx
   ```
-- [ ] Instalar dependências de dev:
+- [x] Instalar dependências de dev:
   ```
   @nestjs/testing
   jest @types/jest supertest @types/supertest ts-jest
   eslint prettier
   ```
-- [ ] Configurar ESLint + Prettier
-- [ ] Criar `.env.example` com todas as variáveis (ver `CLAUDE.md`)
-- [ ] Configurar `ConfigModule.forRoot({ isGlobal: true, validationSchema })` no `AppModule` com validação das variáveis obrigatórias ao iniciar
+- [x] Configurar ESLint + Prettier
+- [x] Criar `.env.example` com todas as variáveis (ver `CLAUDE.md`)
+- [x] Configurar `ConfigModule.forRoot({ isGlobal: true, validationSchema })` no `AppModule` com validação das variáveis obrigatórias ao iniciar
 
 ### 1.2 Estrutura de Módulos
 
-- [ ] Criar estrutura de diretórios conforme `CLAUDE.md` seção "Estrutura de Pastas"
-- [ ] Criar `PrismaModule` global com `PrismaService` (estende `PrismaClient`, conecta no `onModuleInit`)
-- [ ] Criar `SharedModule` com `NotifyService` (exportado para outros módulos)
-- [ ] Criar `AppModule` raiz importando todos os feature modules e `ConfigModule`
-- [ ] Configurar `main.ts`:
+- [x] Criar estrutura de diretórios conforme `CLAUDE.md` seção "Estrutura de Pastas"
+- [x] Criar `PrismaModule` global com `PrismaService` (estende `PrismaClient`, conecta no `onModuleInit`)
+- [x] Criar `SharedModule` com `NotifyService` (exportado para outros módulos)
+- [x] Criar `AppModule` raiz importando todos os feature modules e `ConfigModule`
+- [x] Configurar `main.ts`:
   - `ValidationPipe` global com `whitelist: true`, `forbidNonWhitelisted: true`, `transform: true`
   - `HttpExceptionFilter` global
   - Swagger com `DocumentBuilder` em `/docs`
@@ -64,57 +64,57 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 1.3 Banco de Dados
 
-- [ ] Configurar `prisma/schema.prisma` com todas as entidades do `DESIGN_SPEC.md` seção 3:
-  - [ ] Enum `RoomType`
-  - [ ] Enum `Resource`
-  - [ ] Enum `Role`
-  - [ ] Enum `BookingStatus`
-  - [ ] Enum `AdditionalRequestType`
-  - [ ] Enum `AdditionalStatus`
-  - [ ] Model `Room`
-  - [ ] Model `Booking`
-  - [ ] Model `AdditionalRequestItem`
-- [ ] Rodar `prisma migrate dev --name init`
-- [ ] Criar `prisma/seed.ts` com dados iniciais (pelo menos 5 salas variadas para desenvolvimento)
-- [ ] Configurar `src/config/database.ts` exportando instância do PrismaClient
+- [x] Configurar `prisma/schema.prisma` com todas as entidades do `DESIGN_SPEC.md` seção 3:
+  - [x] Enum `RoomType`
+  - [x] Enum `Resource`
+  - [x] Enum `Role`
+  - [x] Enum `BookingStatus`
+  - [x] Enum `AdditionalRequestType`
+  - [x] Enum `AdditionalStatus`
+  - [x] Model `Room`
+  - [x] Model `Booking`
+  - [x] Model `AdditionalRequestItem`
+- [x] Rodar `prisma migrate dev --name init`
+- [x] Criar `prisma/seed.ts` com dados iniciais (pelo menos 5 salas variadas para desenvolvimento)
+- [x] Configurar `src/config/database.ts` exportando instância do PrismaClient
 
 ### 1.4 Configurações Globais NestJS
 
-- [ ] Registrar `ThrottlerModule` no `AppModule` com limites do `.env` (rate limiting global)
-- [ ] Criar `src/shared/filters/http-exception.filter.ts` — normaliza todas as exceções no formato padrão
-- [ ] Criar `src/shared/interceptors/logging.interceptor.ts` — loga método, rota e tempo de resposta
-- [ ] Registrar filter e interceptor globalmente via `APP_FILTER` e `APP_INTERCEPTOR` no `AppModule`
+- [x] Registrar `ThrottlerModule` no `AppModule` com limites do `.env` (rate limiting global)
+- [x] Criar `src/shared/filters/http-exception.filter.ts` — normaliza todas as exceções no formato padrão
+- [x] Criar `src/shared/interceptors/logging.interceptor.ts` — loga método, rota e tempo de resposta
+- [x] Registrar filter e interceptor globalmente via `APP_FILTER` e `APP_INTERCEPTOR` no `AppModule`
 
 ### 1.5 Autenticação e Guards
 
-- [ ] Criar `src/shared/guards/auth.guard.ts` (implementa `CanActivate`):
+- [x] Criar `src/shared/guards/auth.guard.ts` (implementa `CanActivate`):
   - Extrai Bearer token do header `Authorization`
   - Faz chamada ao `AUTH_SERVICE_URL` via `HttpService`
   - Em caso de 401 externo → lança `UnauthorizedException`
   - Popula `request.user` com `{ userId, role, name, email }`
   - Respeita decorator `@Public()` para rotas abertas
-- [ ] Criar `src/shared/guards/roles.guard.ts` (implementa `CanActivate`):
+- [x] Criar `src/shared/guards/roles.guard.ts` (implementa `CanActivate`):
   - Lê roles via `Reflector`
   - Se role não autorizado → lança `ForbiddenException`
-- [ ] Criar decorators: `@Roles()`, `@CurrentUser()`, `@Public()`
-- [ ] Registrar `AuthGuard` e `RolesGuard` como `APP_GUARD` no `AppModule` (ordem importa: auth primeiro)
-- [ ] Criar exceções customizadas em `src/shared/exceptions/` para erros de domínio não cobertos pelo NestJS padrão:
+- [x] Criar decorators: `@Roles()`, `@CurrentUser()`, `@Public()`
+- [x] Registrar `AuthGuard` e `RolesGuard` como `APP_GUARD` no `AppModule` (ordem importa: auth primeiro)
+- [x] Criar exceções customizadas em `src/shared/exceptions/` para erros de domínio não cobertos pelo NestJS padrão:
   - `BookingConflictException` (409)
   - `RoomNotAvailableException` (409)
 
 ### 1.6 Health Check
 
-- [ ] Criar `HealthModule` com `HealthController`
-- [ ] `GET /health` retorna `{ status: "ok", timestamp: "..." }`
-- [ ] Marcar com `@Public()` — não requer autenticação
+- [x] Criar `HealthModule` com `HealthController`
+- [x] `GET /health` retorna `{ status: "ok", timestamp: "..." }`
+- [x] Marcar com `@Public()` — não requer autenticação
 
 ### 1.7 Testes de Fundação
 
-- [ ] Configurar Jest com `ts-jest` (já vem configurado no template NestJS)
-- [ ] Testar que a aplicação inicia sem erros (`Test.createTestingModule`)
-- [ ] Testar health check retorna 200
-- [ ] Testar que rota protegida sem token retorna 401
-- [ ] Testar que rota protegida com role errado retorna 403
+- [x] Configurar Jest com `ts-jest` (já vem configurado no template NestJS)
+- [x] Testar que a aplicação inicia sem erros (`Test.createTestingModule`)
+- [x] Testar health check retorna 200
+- [x] Testar que rota protegida sem token retorna 401
+- [x] Testar que rota protegida com role errado retorna 403
 
 **✅ Critério de saída da Fase 1:** `GET /health` retorna 200; rota protegida sem token retorna 401.
 
@@ -128,7 +128,7 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 2.1 Repository
 
-- [ ] Criar `src/modules/rooms/room.repository.ts`:
+- [x] Criar `src/modules/rooms/room.repository.ts`:
   - `findAll(filters)` — com filtros de tipo, capacidade, recursos, andar
   - `findById(id)`
   - `create(data)`
@@ -138,7 +138,7 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 2.2 Service
 
-- [ ] Criar `src/modules/rooms/room.service.ts`:
+- [x] Criar `src/modules/rooms/room.service.ts`:
   - `listRooms(filters, userRole)` — filtra somente `isActive: true`
   - `getRoomById(id)` — lança `NotFoundError` se não existir ou inativo
   - `checkRoomAccess(room, userRole)` — valida `restrictedToRoles`
@@ -148,28 +148,28 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 2.3 Controller, DTOs e Rotas
 
-- [ ] Criar `src/modules/rooms/dto/`:
+- [x] Criar `src/modules/rooms/dto/`:
   - `CreateRoomDto` — com `@IsString`, `@IsEnum`, `@IsInt`, `@IsArray`, `@ApiProperty` em todos os campos
   - `UpdateRoomDto` — estende `PartialType(CreateRoomDto)`
   - `RoomFiltersDto` — com `@IsOptional` em todos os campos
-- [ ] Criar `src/modules/rooms/rooms.controller.ts` com os 6 endpoints usando decoradores NestJS
-- [ ] Adicionar `@ApiOperation` e `@ApiResponse` em cada endpoint
-- [ ] Aplicar `@Roles(Role.ADMIN)` nos endpoints de criação, edição e desativação
-- [ ] Criar `RoomsModule` e registrar em `AppModule`
+- [x] Criar `src/modules/rooms/rooms.controller.ts` com os 6 endpoints usando decoradores NestJS
+- [x] Adicionar `@ApiOperation` e `@ApiResponse` em cada endpoint
+- [x] Aplicar `@Roles(Role.ADMIN)` nos endpoints de criação, edição e desativação
+- [x] Criar `RoomsModule` e registrar em `AppModule`
 
 ### 2.4 Testes
 
-- [ ] Unit: `RoomService` com mock do Repository
-  - [ ] `listRooms` filtra salas inativas
-  - [ ] `getRoomById` lança NotFoundError para sala inexistente
-  - [ ] `checkRoomAccess` lança ForbiddenError para perfil não autorizado
-  - [ ] `deactivateRoom` faz soft delete
-- [ ] Integration: endpoints via Supertest
-  - [ ] GET /rooms retorna lista paginada
-  - [ ] GET /rooms com filtros retorna resultados corretos
-  - [ ] POST /rooms sem ADMIN retorna 403
-  - [ ] POST /rooms com ADMIN cria sala e retorna 201
-  - [ ] DELETE /rooms/:id desativa sala (não deleta)
+- [x] Unit: `RoomService` com mock do Repository
+  - [x] `listRooms` filtra salas inativas
+  - [x] `getRoomById` lança NotFoundError para sala inexistente
+  - [x] `checkRoomAccess` lança ForbiddenError para perfil não autorizado
+  - [x] `deactivateRoom` faz soft delete
+- [x] Integration: endpoints via Supertest
+  - [x] GET /rooms retorna lista paginada
+  - [x] GET /rooms com filtros retorna resultados corretos
+  - [x] POST /rooms sem ADMIN retorna 403
+  - [x] POST /rooms com ADMIN cria sala e retorna 201
+  - [x] DELETE /rooms/:id desativa sala (não deleta)
 
 **✅ Critério de saída da Fase 2:** CRUD de salas funcionando, soft delete implementado, filtros de busca funcionando.
 
@@ -183,7 +183,7 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 3.1 Repository
 
-- [ ] Criar `src/modules/bookings/booking.repository.ts`:
+- [x] Criar `src/modules/bookings/booking.repository.ts`:
   - `findAll(filters)` — com filtros de roomId, userId, status, período
   - `findById(id)`
   - `findByUserId(userId)`
@@ -194,8 +194,8 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 3.2 Service — Criação
 
-- [ ] Criar `src/modules/bookings/booking.service.ts`:
-  - [ ] `createBooking(data, user)`:
+- [x] Criar `src/modules/bookings/booking.service.ts`:
+  - [x] `createBooking(data, user)`:
     - Validar que sala existe e está ativa
     - Validar acesso do perfil à sala (`checkRoomAccess`)
     - Verificar conflito com lock (`findConflicts`)
@@ -208,16 +208,16 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 3.3 Service — Consulta
 
-- [ ] `listBookings(filters, user)`:
+- [x] `listBookings(filters, user)`:
   - COLLABORATOR → força `userId = request.user.userId`
   - MANAGER → filtra por equipe (aguardar definição de "equipe" — por ora, aceitar qualquer)
   - ADMIN → sem restrição
-- [ ] `getBookingById(id, user)`:
+- [x] `getBookingById(id, user)`:
   - Valida que o usuário pode ver a reserva (dono, MANAGER, ADMIN)
 
 ### 3.4 Service — Cancelamento
 
-- [ ] `cancelBooking(id, cancelledBy, user)`:
+- [x] `cancelBooking(id, cancelledBy, user)`:
   - Validar status atual (CONFIRMED ou PENDING)
   - Validar permissão de cancelamento (ver `DESIGN_SPEC.md` seção 4.4)
   - Atualizar status para CANCELLED
@@ -225,32 +225,32 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 3.5 Controller, DTOs e Rotas
 
-- [ ] Criar `src/modules/bookings/dto/`:
+- [x] Criar `src/modules/bookings/dto/`:
   - `CreateBookingDto` — com validação completa de todos os campos
   - `BookingFiltersDto` — com `@IsOptional` em todos
   - `CancelBookingDto` — com `cancelMode: 'single' | 'this_and_following'`
-- [ ] Criar `BookingsController` com endpoints e decoradores NestJS
-- [ ] Adicionar `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth` em cada endpoint
-- [ ] Criar `BookingsModule` e registrar em `AppModule`
+- [x] Criar `BookingsController` com endpoints e decoradores NestJS
+- [x] Adicionar `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth` em cada endpoint
+- [x] Criar `BookingsModule` e registrar em `AppModule`
 
 ### 3.6 Notificação
 
-- [ ] Criar `src/shared/utils/notify.service.ts` como `@Injectable()`:
+- [x] Criar `src/shared/utils/notify.service.ts` como `@Injectable()`:
   - Injeta `HttpService` do `@nestjs/axios`
   - Método `send(event, to, data)` faz POST no `NOTIFICATION_SERVICE_URL`
   - Envolto em `try/catch` — usa `this.logger.error()` mas não propaga exceção
-- [ ] Exportar `NotifyService` do `SharedModule`
+- [x] Exportar `NotifyService` do `SharedModule`
 
 ### 3.7 Testes
 
-- [ ] Unit: `BookingService`
-  - [ ] Cria reserva CONFIRMED quando sem pedidos adicionais
-  - [ ] Cria reserva PENDING quando com pedidos adicionais
-  - [ ] Lança ConflictError quando há sobreposição de horário
-  - [ ] Lança ForbiddenError para sala restrita
-  - [ ] Cancela reserva do próprio usuário
-  - [ ] Lança ForbiddenError ao FACILITIES tentar cancelar
-  - [ ] Lança ValidationError ao cancelar reserva já cancelada
+- [x] Unit: `BookingService`
+  - [x] Cria reserva CONFIRMED quando sem pedidos adicionais
+  - [x] Cria reserva PENDING quando com pedidos adicionais
+  - [x] Lança ConflictError quando há sobreposição de horário
+  - [x] Lança ForbiddenError para sala restrita
+  - [x] Cancela reserva do próprio usuário
+  - [x] Lança ForbiddenError ao FACILITIES tentar cancelar
+  - [x] Lança ValidationError ao cancelar reserva já cancelada
 - [ ] Integration: fluxo completo via Supertest com banco real
   - [ ] **Race condition**: duas requisições simultâneas para a mesma sala → apenas uma confirmada
   - [ ] Reserva de dia inteiro bloqueia a sala no dia inteiro
@@ -267,47 +267,47 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 4.1 Recorrência
 
-- [ ] Instalar e configurar lib `rrule`
-- [ ] Criar `src/shared/utils/rrule.ts`:
+- [x] Instalar e configurar lib `rrule`
+- [x] Criar `src/shared/utils/rrule.util.ts`:
   - `expandRecurrence(startAt, endAt, rruleString, maxOccurrences?)` → `Array<{startAt, endAt}>`
   - Limitar expansão a no máximo 365 ocorrências
-- [ ] Atualizar `BookingService.createBooking()`:
-  - [ ] Se `recurrenceRule` presente, expandir todas as ocorrências
-  - [ ] Verificar conflito em **todas** as ocorrências antes de persistir
-  - [ ] Se qualquer ocorrência conflitar, rejeitar **toda** a criação com `ConflictError` informando qual ocorrência conflitou
-  - [ ] Gerar `recurrenceGroupId` (UUID) e associar a todas as ocorrências
-  - [ ] Persistir todas as ocorrências em um único `prisma.$transaction()`
-- [ ] Atualizar `BookingService.cancelBooking()`:
-  - [ ] Aceitar `cancelMode: 'single' | 'this_and_following'`
-  - [ ] `this_and_following`: cancelar todas as ocorrências do `recurrenceGroupId` com `startAt >= ocorrência atual`
+- [x] Atualizar `BookingService.createBooking()`:
+  - [x] Se `recurrenceRule` presente, expandir todas as ocorrências
+  - [x] Verificar conflito em **todas** as ocorrências antes de persistir
+  - [x] Se qualquer ocorrência conflitar, rejeitar **toda** a criação com `ConflictError` informando qual ocorrência conflitou
+  - [x] Gerar `recurrenceGroupId` (UUID) e associar a todas as ocorrências
+  - [x] Persistir todas as ocorrências em um único `prisma.$transaction()`
+- [x] Atualizar `BookingService.cancelBooking()`:
+  - [x] Aceitar `cancelMode: 'single' | 'this_and_following'`
+  - [x] `this_and_following`: cancelar todas as ocorrências do `recurrenceGroupId` com `startAt >= ocorrência atual`
 
 ### 4.2 Aprovação
 
-- [ ] Adicionar métodos ao `BookingService`:
-  - [ ] `approveBooking(id, approvedBy, user)`:
+- [x] Adicionar métodos ao `BookingService`:
+  - [x] `approveBooking(id, approvedBy, user)`:
     - Validar que status é PENDING
     - Atualizar para CONFIRMED, registrar `approvedBy` e `approvedAt`
     - Disparar notificação `BOOKING_APPROVED`
-  - [ ] `rejectBooking(id, rejectedBy, user, reason?)`:
+  - [x] `rejectBooking(id, rejectedBy, user, reason?)`:
     - Validar que status é PENDING
     - Atualizar para REJECTED
     - Disparar notificação `BOOKING_REJECTED`
-- [ ] Adicionar rotas ao controller com decoradores NestJS:
+- [x] Adicionar rotas ao controller com decoradores NestJS:
   - `POST /bookings/:id/approve` — `@Roles(Role.MANAGER, Role.ADMIN)`
   - `POST /bookings/:id/reject` — `@Roles(Role.MANAGER, Role.ADMIN)`
-- [ ] Adicionar `PUT /bookings/:id` com `UpdateBookingDto` para edição de reservas próprias (PENDING ou CONFIRMED)
+- [x] Adicionar `PUT /bookings/:id` com `UpdateBookingDto` para edição de reservas próprias (PENDING ou CONFIRMED)
 
 ### 4.3 Testes
 
-- [ ] Unit: recorrência
-  - [ ] Expande ocorrências corretamente para RRULE semanal
-  - [ ] Rejeita criação se qualquer ocorrência tiver conflito
-  - [ ] `cancelMode: 'this_and_following'` cancela a partir da ocorrência correta
-- [ ] Unit: aprovação
-  - [ ] Aprovação muda status para CONFIRMED e dispara notificação
-  - [ ] Rejeição muda status para REJECTED e dispara notificação
-  - [ ] COLLABORATOR não pode aprovar (403)
-  - [ ] Não pode aprovar reserva que não está PENDING
+- [x] Unit: recorrência
+  - [x] Expande ocorrências corretamente para RRULE semanal
+  - [x] Rejeita criação se qualquer ocorrência tiver conflito
+  - [x] `cancelMode: 'this_and_following'` cancela a partir da ocorrência correta
+- [x] Unit: aprovação
+  - [x] Aprovação muda status para CONFIRMED e dispara notificação
+  - [x] Rejeição muda status para REJECTED e dispara notificação
+  - [x] COLLABORATOR não pode aprovar (403)
+  - [x] Não pode aprovar reserva que não está PENDING
 - [ ] Integration: fluxo completo de aprovação via Supertest
 
 **✅ Critério de saída da Fase 4:** reservas recorrentes criadas em batch; fluxo PENDING → CONFIRMED/REJECTED funcionando.
