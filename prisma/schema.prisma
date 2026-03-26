@@ -2,11 +2,14 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = []
+  output   = "../generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+  schemas  = ["rh"]
 }
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
@@ -15,6 +18,8 @@ enum RoomType {
   SALA
   AUDITORIO
   LABORATORIO
+
+  @@schema("rh")
 }
 
 enum Resource {
@@ -23,6 +28,8 @@ enum Resource {
   VIDEO_CONFERENCIA
   MICROFONE
   FLIPCHART
+
+  @@schema("rh")
 }
 
 enum Role {
@@ -30,6 +37,8 @@ enum Role {
   MANAGER
   FACILITIES
   ADMIN
+
+  @@schema("rh")
 }
 
 enum BookingStatus {
@@ -37,6 +46,8 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   REJECTED
+
+  @@schema("rh")
 }
 
 enum AdditionalRequestType {
@@ -45,18 +56,24 @@ enum AdditionalRequestType {
   COMPLETO
   PERSONALIZADO
   EQUIPAMENTO_EXTRA
+
+  @@schema("rh")
 }
 
 enum AdditionalStatus {
   PENDING
   PREPARED
   CANCELLED
+
+  @@schema("rh")
 }
 
 enum InviteStatus {
   ENTREGUE
   NAO_ENTREGUE
   PENDENTE
+
+  @@schema("rh")
 }
 
 enum ParticipantType {
@@ -76,6 +93,8 @@ enum ParticipantType {
   GESTANTES
   J9VEM_APRENDIZES
   CIPISTAS
+
+  @@schema("rh")
 }
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -95,6 +114,7 @@ model Room {
   bookings Booking[]
 
   @@map("rooms")
+  @@schema("rh")
 }
 
 model Booking {
@@ -131,6 +151,7 @@ model Booking {
   @@index([userId], name: "idx_bookings_user")
   @@index([recurrenceGroupId], name: "idx_bookings_recurrence_group")
   @@map("bookings")
+  @@schema("rh")
 }
 
 model AdditionalRequestItem {
@@ -148,4 +169,5 @@ model AdditionalRequestItem {
 
   @@index([bookingId], name: "idx_additional_requests_booking")
   @@map("additional_request_items")
+  @@schema("rh")
 }
