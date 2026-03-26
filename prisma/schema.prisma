@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum RoomType {
+  SALA
+  AUDITORIO
+  LABORATORIO
+}
+
+enum Resource {
+  PROJETOR
+  TV
+  VIDEO_CONFERENCIA
+  MICROFONE
+  FLIPCHART
+}
+
+enum Role {
+  COLLABORATOR
+  MANAGER
+  FACILITIES
+  ADMIN
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REJECTED
+}
+
+enum AdditionalRequestType {
+  CAFE_SIMPLES
+  LANCHE
+  COMPLETO
+  PERSONALIZADO
+  EQUIPAMENTO_EXTRA
+}
+
+enum AdditionalStatus {
+  PENDING
+  PREPARED
+  CANCELLED
+}
+
+enum InviteStatus {
+  ENTREGUE
+  NAO_ENTREGUE
+  PENDENTE
+}
+
+enum ParticipantType {
+  AUXILIAR
+  LIDER
+  COORDENADOR
+  GERENTE
+  NOVO_COLABORADOR
+  AREA_APOIO
+  COLABORADOR
+  APREDIZ
+  LIDERES_E_COORDENADORES
+  MECANICOS
+  COLABORADORES_ESPECIFICOS
+  PROCESSO_SELETIVO
+  VISISTAS
+  GESTANTES
+  J9VEM_APRENDIZES
+  CIPISTAS
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model Room {
+  id                String     @id @default(uuid())
+  name              String
+  type              RoomType
+  capacity          Int
+  floor             String
+  resources         Resource[]
+  restrictedToRoles Role[]
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  bookings Booking[]
+
+  @@map("rooms")
+}
+
+model Booking {
+  id                  String           @id @default(uuid())
+  roomId              String           @map("room_id")
+  userId              String           @map("user_id")
+  userName            String           @map("user_name")
+  title               String
+  description         String?
+  startAt             DateTime         @map("start_at")
+  endAt               DateTime         @map("end_at")
+  isFullDay           Boolean          @default(false) @map("is_full_day")
+  status              BookingStatus    @default(CONFIRMED)
+  recurrenceRule      String?          @map("recurrence_rule")
+  recurrenceGroupId   String?          @map("recurrence_group_id")
+  additionalNotes     String?          @map("additional_notes")
+  approvedBy          String?          @map("approved_by")
+  approvedAt          DateTime?        @map("approved_at")
+  cancelledBy         String?          @map("cancelled_by")
+  cancelledAt         DateTime?        @map("cancelled_at")
+  numberParticipants  Int              @default(1) @map("number_participants")
+  participantType     ParticipantType  @default(COLABORADOR) @map("participant_type")
+  invites             Boolean          @default(false)
+  inviteStatus        InviteStatus?    @map("invite_status")
+  additionalItemsStatus AdditionalStatus? @default(PENDING) @map("additional_items_status")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  updatedAt           DateTime         @updatedAt @map("updated_at")
+
+  room            Room                    @relation(fields: [roomId], references: [id])
+  additionalItems AdditionalRequestItem[]
+
+  @@index([roomId, status], name: "idx_bookings_room_status")
+  @@index([startAt, endAt], name: "idx_bookings_start_end")
+  @@index([userId], name: "idx_bookings_user")
+  @@index([recurrenceGroupId], name: "idx_bookings_recurrence_group")
+  @@map("bookings")
+}
+
+model AdditionalRequestItem {
+  id         String                @id @default(uuid())
+  bookingId  String                @map("booking_id")
+  type       AdditionalRequestType
+  status     AdditionalStatus      @default(PENDING)
+  notes      String?
+  preparedBy String?               @map("prepared_by")
+  preparedAt DateTime?             @map("prepared_at")
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId], name: "idx_additional_requests_booking")
+  @@map("additional_request_items")
+}
