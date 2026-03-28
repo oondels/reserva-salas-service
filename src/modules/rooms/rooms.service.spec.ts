@@ -140,4 +140,50 @@ describe('RoomsService', () => {
       );
     });
   });
+
+  describe('updateRoom', () => {
+    it('should update room when it exists', async () => {
+      repository.findById.mockResolvedValue(mockRoom);
+      repository.update.mockResolvedValue({ ...mockRoom, name: 'Sala Beta' });
+
+      const result = await service.updateRoom('uuid-1', { name: 'Sala Beta' } as any);
+
+      expect(result.name).toBe('Sala Beta');
+      expect(repository.update).toHaveBeenCalledWith('uuid-1', { name: 'Sala Beta' });
+    });
+
+    it('should throw NotFoundException when room does not exist', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(service.updateRoom('non-existent', {} as any)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getRoomAvailability', () => {
+    it('should return occupied slots for a room', async () => {
+      const slots = [
+        { startAt: new Date('2026-04-01T09:00:00Z'), endAt: new Date('2026-04-01T10:00:00Z') },
+      ];
+      repository.findById.mockResolvedValue(mockRoom);
+      repository.findAvailability.mockResolvedValue(slots as any);
+
+      const result = await service.getRoomAvailability(
+        'uuid-1',
+        '2026-04-01T00:00:00Z',
+        '2026-04-01T23:59:59Z',
+      );
+
+      expect(result.occupiedSlots).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException when room does not exist', async () => {
+      repository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.getRoomAvailability('non-existent', '2026-04-01T00:00:00Z', '2026-04-01T23:59:59Z'),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });

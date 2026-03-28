@@ -365,4 +365,140 @@ describe('BookingsService', () => {
       );
     });
   });
+
+  describe('createBooking — isFullDay', () => {
+    it('should set startAt to midnight and endAt to 23:59:59 for full-day bookings', async () => {
+      roomsService.getRoomById.mockResolvedValue(mockRoom as any);
+      bookingsRepository.create.mockResolvedValue({ ...mockBooking } as any);
+
+      await service.createBooking(
+        {
+          roomId: 'room-1',
+          title: 'Dia inteiro',
+          startAt: '2026-04-01T09:00:00Z',
+          endAt: '2026-04-01T10:00:00Z',
+          isFullDay: true,
+        },
+        collaboratorUser,
+      );
+
+      const createCall = bookingsRepository.create.mock.calls[0][0];
+      expect((createCall.startAt as Date).getHours()).toBe(0);
+      expect((createCall.endAt as Date).getHours()).toBe(23);
+    });
+  });
+
+  describe('createBooking — recorrência', () => {
+    it('should create recurring bookings and return recurrenceGroupId', async () => {
+      roomsService.getRoomById.mockResolvedValue(mockRoom as any);
+      bookingsRepository.createMany.mockResolvedValue({ count: 4 });
+
+      const result = await service.createBooking(
+        {
+          roomId: 'room-1',
+          title: 'Reunião semanal',
+          startAt: '2026-04-07T09:00:00Z',
+          endAt: '2026-04-07T10:00:00Z',
+          recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+        },
+        collaboratorUser,
+      ) as any;
+
+      expect(result.recurrenceGroupId).toBeDefined();
+      expect(result.count).toBe(4);
+    });
+
+    it('should throw BookingConflictException when recurring booking conflicts', async () => {
+      roomsService.getRoomById.mockResolvedValue(mockRoom as any);
+      bookingsRepository.createMany.mockRejectedValue(
+        new Error('BOOKING_CONFLICT:2026-04-07T09:00:00.000Z'),
+      );
+
+      await expect(
+        service.createBooking(
+          {
+            roomId: 'room-1',
+            title: 'Reunião semanal',
+            startAt: '2026-04-07T09:00:00Z',
+            endAt: '2026-04-07T10:00:00Z',
+            recurrenceRule: 'FREQ=WEEKLY;COUNT=4',
+          },
+          collaboratorUser,
+        ),
+      ).rejects.toThrow(BookingConflictException);
+    });
+  });
+
+  describe('cancelBooking — this_and_following', () => {
+    it('should cancel this and following recurrences', async () => {
+      const recurrentBooking = {
+        ...mockBooking,
+        recurrenceGroupId: 'group-uuid',
+        startAt: new Date('2026-04-14T09:00:00Z'),
+      };
+      bookingsRepository.findById.mockResolvedValue(recurrentBooking as any);
+      bookingsRepository.cancelRecurrenceGroup.mockResolvedValue({ count: 3 } as any);
+
+      const result = await service.cancelBooking(
+        'booking-1',
+        { cancelMode: CancelMode.THIS_AND_FOLLOWING },
+        collaboratorUser,
+      );
+
+      expect(bookingsRepository.cancelRecurrenceGroup).toHaveBeenCalledWith(
+        'group-uuid',
+        recurrentBooking.startAt,
+        collaboratorUser.userId,
+      );
+      expect((result as any).message).toContain('canceladas');
+    });
+  });
+
+  describe('updateBooking', () => {
+    it('should update title and dates of own booking', async () => {
+      bookingsRepository.findById.mockResolvedValue(mockBooking as any);
+      bookingsRepository.update.mockResolvedValue({
+        ...mockBooking,
+        title: 'Novo título',
+      } as any);
+
+      const result = await service.updateBooking(
+        'booking-1',
+        { title: 'Novo título' },
+        collaboratorUser,
+      );
+
+      expect((result as any).title).toBe('Novo título');
+    });
+
+    it('should throw ForbiddenException when non-owner non-admin tries to update', async () => {
+      bookingsRepository.findById.mockResolvedValue({
+        ...mockBooking,
+        userId: 'other-user',
+      } as any);
+
+      await expect(
+        service.updateBooking('booking-1', { title: 'X' }, collaboratorUser),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw UnprocessableEntityException when booking is cancelled', async () => {
+      bookingsRepository.findById.mockResolvedValue({
+        ...mockBooking,
+        status: BookingStatus.CANCELLED,
+      } as any);
+
+      await expect(
+        service.updateBooking('booking-1', { title: 'X' }, adminUser),
+      ).rejects.toThrow(UnprocessableEntityException);
+    });
+
+    it('should throw NotFoundException when booking does not exist', async () => {
+      bookingsRepository.findById.mockResolvedValue(null);
+
+      await expect(
+        service.updateBooking('non-existent', { title: 'X' }, adminUser),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });

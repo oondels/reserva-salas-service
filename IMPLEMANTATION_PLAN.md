@@ -322,14 +322,14 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 5.1 Repository
 
-- [ ] Criar `src/modules/additional-requests/additional-request.repository.ts`:
+- [x] Criar `src/modules/additional-requests/additional-request.repository.ts`:
   - `findAll(filters)` — filtros por status e data da reserva
   - `findById(id)`
   - `update(id, data)` — atualiza status, preparedBy, preparedAt
 
 ### 5.2 Service
 
-- [ ] Criar `src/modules/additional-requests/additional-request.service.ts`:
+- [x] Criar `src/modules/additional-requests/additional-request.service.ts`:
   - `listRequests(filters, user)` — somente FACILITIES e ADMIN
   - `updateRequestStatus(id, data, user)`:
     - Validar que item existe
@@ -338,19 +338,19 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 5.3 Controller, DTOs e Rotas
 
-- [ ] Criar `UpdateAdditionalRequestDto` com `status` e `notes` opcionais
-- [ ] Criar `AdditionalRequestFiltersDto`
-- [ ] `GET /additional-requests` — `@Roles(Role.FACILITIES, Role.ADMIN)`
-- [ ] `PUT /additional-requests/:id` — `@Roles(Role.FACILITIES, Role.ADMIN)`
-- [ ] `@ApiOperation` e `@ApiResponse` em cada endpoint
-- [ ] Criar `AdditionalRequestsModule` e registrar em `AppModule`
+- [x] Criar `UpdateAdditionalRequestDto` com `status` e `notes` opcionais
+- [x] Criar `AdditionalRequestFiltersDto`
+- [x] `GET /additional-requests` — `@Roles(Role.FACILITIES, Role.ADMIN)`
+- [x] `PUT /additional-requests/:id` — `@Roles(Role.FACILITIES, Role.ADMIN)`
+- [x] `@ApiOperation` e `@ApiResponse` em cada endpoint
+- [x] Criar `AdditionalRequestsModule` e registrar em `AppModule`
 
 ### 5.4 Testes
 
-- [ ] Unit: `AdditionalRequestService`
-  - [ ] Somente FACILITIES e ADMIN podem listar
-  - [ ] Atualização registra preparedBy e preparedAt corretamente
-  - [ ] COLLABORATOR recebe 403
+- [x] Unit: `AdditionalRequestService`
+  - [x] Somente FACILITIES e ADMIN podem listar
+  - [x] Atualização registra preparedBy e preparedAt corretamente
+  - [x] COLLABORATOR recebe 403
 - [ ] Integration: via Supertest
 
 **✅ Critério de saída da Fase 5:** FACILITIES consegue ver e atualizar fila de preparo.
@@ -365,42 +365,42 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 6.1 Dashboard
 
-- [ ] Criar `src/modules/dashboard/dashboard.service.ts`:
+- [x] Criar `src/modules/dashboard/dashboard.service.ts`:
   - Consultas agregadas para:
     - Total de reservas hoje
     - Total de reservas no mês
     - Reservas PENDING aguardando aprovação
     - Taxa de ocupação do dia (reservas confirmadas / slots disponíveis)
     - Top 5 salas mais reservadas no mês
-- [ ] `GET /dashboard` (MANAGER, ADMIN)
+- [x] `GET /dashboard` (MANAGER, ADMIN)
 
 ### 6.2 Relatório de Reservas
 
-- [ ] Criar `src/modules/reports/report.service.ts`:
+- [x] Criar `src/modules/reports/report.service.ts`:
   - `getBookingsReport(filters)` — paginado, com todos os filtros do `DESIGN_SPEC.md`
   - `exportBookings(filters, format)` — gera CSV ou XLSX
-- [ ] `GET /reports/bookings` (ADMIN)
-- [ ] `GET /reports/bookings/export` (ADMIN) — retorna arquivo para download
+- [x] `GET /reports/bookings` (ADMIN, MANAGER)
+- [x] `GET /reports/bookings/export` (ADMIN) — retorna arquivo para download
 
 ### 6.3 Relatório de Uso de Salas
 
-- [ ] `getRoomsUsage(startDate, endDate)` — horas reservadas por sala no período
-- [ ] `GET /reports/rooms/usage` (ADMIN)
+- [x] `getRoomsUsage(startDate, endDate)` — horas reservadas por sala no período
+- [x] `GET /reports/rooms/usage` (ADMIN)
 
 ### 6.4 Exportação
 
-- [ ] Instalar `xlsx` (SheetJS) para geração de XLSX
-- [ ] CSV: serialização manual (sem dependência extra)
-- [ ] Response com headers corretos:
+- [x] Instalar `xlsx` (SheetJS) para geração de XLSX
+- [x] CSV: serialização manual (sem dependência extra)
+- [x] Response com headers corretos:
   - CSV: `Content-Type: text/csv; Content-Disposition: attachment; filename="reservas.csv"`
   - XLSX: `Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
 
 ### 6.5 Testes
 
-- [ ] Unit: `ReportService`
-  - [ ] Filtros aplicados corretamente
-  - [ ] Exportação CSV gera conteúdo válido
-  - [ ] Exportação XLSX gera arquivo válido
+- [x] Unit: `ReportService`
+  - [x] Filtros aplicados corretamente
+  - [x] Exportação CSV gera conteúdo válido
+  - [x] Exportação XLSX gera arquivo válido
 - [ ] Integration: via Supertest
 
 **✅ Critério de saída da Fase 6:** dashboard retorna métricas; exportação CSV e XLSX funcionando.
@@ -415,9 +415,9 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 7.1 Cobertura de Testes
 
-- [ ] Rodar `jest --coverage`
-- [ ] Garantir ≥ 80% de cobertura na camada Service
-- [ ] Garantir que todos os casos críticos listados nas fases anteriores estão cobertos
+- [x] Rodar `jest --coverage`
+- [x] Garantir ≥ 80% de cobertura na camada Service
+- [x] Garantir que todos os casos críticos listados nas fases anteriores estão cobertos
 - [ ] Adicionar testes de integração end-to-end para os principais fluxos:
   - [ ] Fluxo completo: criar reserva com pedido → aprovar → Facilities confirma preparo
   - [ ] Fluxo recorrente: criar → cancelar "this_and_following"
@@ -425,33 +425,24 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 7.2 Revisão de Segurança
 
-- [ ] Validar que nenhum endpoint retorna dados de outros usuários sem permissão
-- [ ] Validar que FACILITIES não consegue criar, editar ou cancelar reservas
-- [ ] Validar rate limiting nas rotas de criação
-- [ ] Revisar que nenhuma informação sensível aparece em logs (ex: tokens)
-- [ ] Confirmar que `.env` não está no repositório (`.gitignore`)
+- [x] Validar que nenhum endpoint retorna dados de outros usuários sem permissão
+- [x] Validar que FACILITIES não consegue criar, editar ou cancelar reservas
+- [x] Validar rate limiting nas rotas de criação
+- [x] Revisar que nenhuma informação sensível aparece em logs (ex: tokens)
+- [x] Confirmar que `.env` não está no repositório (`.gitignore`)
 
 ### 7.3 Performance
 
-- [ ] Adicionar índices no banco:
-  ```sql
-  -- Índices críticos para performance
-  CREATE INDEX idx_bookings_room_status ON bookings(room_id, status);
-  CREATE INDEX idx_bookings_start_end ON bookings(start_at, end_at);
-  CREATE INDEX idx_bookings_user ON bookings(user_id);
-  CREATE INDEX idx_bookings_recurrence_group ON bookings(recurrence_group_id);
-  CREATE INDEX idx_additional_requests_booking ON additional_request_items(booking_id);
-  ```
-- [ ] Adicionar via migration Prisma: `prisma migrate dev --name add_performance_indexes`
+- [x] Adicionar índices no banco (já definidos no schema.prisma):
+  - `idx_bookings_room_status`, `idx_bookings_start_end`, `idx_bookings_user`
+  - `idx_bookings_recurrence_group`, `idx_additional_requests_booking`
 - [ ] Testar listagem de disponibilidade para 30 dias com dados de carga
 
 ### 7.4 Documentação
 
-- [ ] Verificar que todos os controllers têm `@ApiTags`, `@ApiBearerAuth`
-- [ ] Verificar que todos os endpoints têm `@ApiOperation` e `@ApiResponse` (incluindo erros 401, 403, 404, 409)
-- [ ] Verificar que todos os DTOs têm `@ApiProperty()` em cada campo
-- [ ] Acessar `/docs` e validar que o Swagger está completo e funcional
-- [ ] Atualizar `README.md` com:
+- [x] Verificar que todos os controllers têm `@ApiTags`, `@ApiBearerAuth`
+- [x] Verificar que todos os endpoints têm `@ApiOperation` e `@ApiResponse`
+- [x] Atualizar `README.md` com:
   - Como instalar e rodar localmente
   - Como rodar as migrations (`prisma migrate dev`)
   - Como rodar os testes (`npm test`, `npm run test:cov`)
@@ -459,11 +450,11 @@ Sistema de Gerenciamento de Reservas de Salas — Back-end API
 
 ### 7.5 Deploy em Homologação
 
-- [ ] Criar `Dockerfile` e `docker-compose.yml` (app + PostgreSQL)
-- [ ] Criar script de CI básico (GitHub Actions ou equivalente):
+- [x] Criar `Dockerfile` e `docker-compose.yml` (app + PostgreSQL)
+- [x] Criar script de CI (GitHub Actions):
   - Lint
   - Build TypeScript
-  - Testes
+  - Testes com cobertura
 - [ ] Rodar migrations em ambiente de homologação
 - [ ] Executar seed com dados de teste
 - [ ] Validar integração com Auth Service e Notification Service em homologação

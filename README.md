@@ -1,98 +1,119 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Reserva de Salas — API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API REST em **NestJS + PostgreSQL** para gerenciamento de reservas de salas em uma fábrica com ~7.000 colaboradores.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Requisitos
 
-## Description
+- Node.js 22 LTS
+- PostgreSQL 16+
+- Docker e Docker Compose (opcional)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Instalação e execução local
 
 ```bash
-$ npm install
+# 1. Instalar dependências
+npm install
+
+# 2. Copiar variáveis de ambiente
+cp .env.example .env
+# Edite o .env com os valores corretos
+
+# 3. Criar schema e rodar migrations
+npx prisma migrate dev
+
+# 4. Popular banco com dados iniciais
+npx prisma db seed
+
+# 5. Iniciar em modo desenvolvimento
+npm run start:dev
+
+# A API estará disponível em http://localhost:3000/api/v1
+# Swagger em http://localhost:3000/api/v1/docs
 ```
 
-## Compile and run the project
+## Executando com Docker
 
 ```bash
-# development
-$ npm run start
+# Subir API + PostgreSQL
+docker compose up -d
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+# Rodar migrations no container (primeira vez)
+docker compose exec app npx prisma migrate deploy
+docker compose exec app npx prisma db seed
 ```
 
-## Run tests
+## Migrations
 
 ```bash
-# unit tests
-$ npm run test
+# Criar nova migration após alterar o schema
+npx prisma migrate dev --name nome-da-migracao
 
-# e2e tests
-$ npm run test:e2e
+# Aplicar migrations em produção (sem gerar arquivos de dev)
+npx prisma migrate deploy
 
-# test coverage
-$ npm run test:cov
+# Visualizar o banco via Prisma Studio
+npx prisma studio
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Testes
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Testes unitários
+npm test
+
+# Testes com relatório de cobertura
+npm run test:cov
+
+# Testes de integração (requer banco rodando)
+INTEGRATION_TEST=true npm test
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Variáveis de ambiente
 
-## Resources
+Crie um arquivo `.env` baseado no `.env.example`:
 
-Check out a few resources that may come in handy when working with NestJS:
+| Variável | Descrição | Obrigatória |
+|---|---|---|
+| `DATABASE_URL` | URL de conexão PostgreSQL | Sim |
+| `AUTH_SERVICE_URL` | URL do serviço de autenticação externo | Sim |
+| `NOTIFICATION_SERVICE_URL` | URL do serviço de notificação externo | Sim |
+| `PORT` | Porta da API (padrão: 3000) | Não |
+| `NODE_ENV` | Ambiente (`development`, `production`, `test`) | Não |
+| `JWT_SECRET` | Segredo JWT para verificação local | Não |
+| `RATE_LIMIT_MAX` | Máximo de requisições por janela (padrão: 100) | Não |
+| `RATE_LIMIT_WINDOW` | Janela de rate limiting em ms (padrão: 60000) | Não |
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## Módulos e endpoints
 
-## Support
+| Módulo | Endpoints | Roles |
+|---|---|---|
+| Health | `GET /health` | Público |
+| Rooms | `GET /rooms`, `POST /rooms`, `PUT /rooms/:id`, `DELETE /rooms/:id` | Todos / ADMIN |
+| Bookings | `GET /bookings`, `POST /bookings`, `PUT /bookings/:id`, `DELETE /bookings/:id` | Todos |
+| Bookings | `POST /bookings/:id/approve`, `POST /bookings/:id/reject` | MANAGER, ADMIN |
+| Additional Requests | `GET /additional-requests`, `PUT /additional-requests/:id` | FACILITIES, ADMIN |
+| Dashboard | `GET /dashboard` | MANAGER, ADMIN |
+| Reports | `GET /reports/bookings`, `GET /reports/bookings/export` | ADMIN, MANAGER |
+| Reports | `GET /reports/rooms/usage`, `GET /reports/rooms/usage/export` | ADMIN |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Arquitetura
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+src/
+├── config/          # Validação de variáveis de ambiente
+├── prisma/          # PrismaService e PrismaModule
+├── health/          # Health check
+├── modules/
+│   ├── rooms/       # CRUD de salas com soft delete
+│   ├── bookings/    # Reservas com recorrência e aprovação
+│   ├── additional-requests/  # Fila de preparo (Facilities)
+│   ├── dashboard/   # Métricas agregadas
+│   └── reports/     # Relatórios com exportação CSV/XLSX
+└── shared/
+    ├── guards/      # AuthGuard, RolesGuard
+    ├── decorators/  # @Roles, @CurrentUser, @Public
+    ├── filters/     # HttpExceptionFilter global
+    ├── interceptors/ # LoggingInterceptor
+    ├── exceptions/  # BookingConflictException, RoomNotAvailableException
+    └── utils/       # NotifyService, rrule.util
+```

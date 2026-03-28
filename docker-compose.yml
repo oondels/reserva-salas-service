@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: reserva-salas-api
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: postgresql://reservas_user:reservas_pass@postgres:5432/reservas
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service/validate}
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-http://notification-service/send}
+      PORT: 3000
+      NODE_ENV: production
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      RATE_LIMIT_MAX: 100
+      RATE_LIMIT_WINDOW: 60000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: reserva-salas-db
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: reservas_user
+      POSTGRES_PASSWORD: reservas_pass
+      POSTGRES_DB: reservas
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U reservas_user -d reservas']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
