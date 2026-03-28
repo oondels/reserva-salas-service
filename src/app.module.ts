@@ -8,6 +8,7 @@ import { SharedModule } from './shared/shared.module';
 import { HealthModule } from './health/health.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
 import { BookingsModule } from './modules/bookings/bookings.module';
+import { AdditionalRequestsModule } from './modules/additional-requests/additional-requests.module';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { LoggingInterceptor } from './shared/interceptors/logging.interceptor';
 import { AuthGuard } from './shared/guards/auth.guard';
@@ -34,6 +35,7 @@ import { envValidationSchema } from './config/env.validation';
     HealthModule,
     RoomsModule,
     BookingsModule,
+    AdditionalRequestsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

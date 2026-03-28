@@ -137,7 +137,7 @@ describe('BookingsService', () => {
         status: BookingStatus.CONFIRMED,
       } as any);
 
-      const result = await service.createBooking(dto, collaboratorUser);
+      const result = await service.createBooking(dto, collaboratorUser) as any;
       expect(result.status).toBe(BookingStatus.CONFIRMED);
     });
 
@@ -151,7 +151,7 @@ describe('BookingsService', () => {
       const result = await service.createBooking(
         { ...dto, additionalRequests: ['CAFE_SIMPLES'] as any },
         collaboratorUser,
-      );
+      ) as any;
       expect(result.status).toBe(BookingStatus.PENDING);
     });
 
