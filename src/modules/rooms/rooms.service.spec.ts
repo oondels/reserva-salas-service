@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
-import { Role, RoomType } from '@prisma/client';
+import { Role, RoomType } from '../../common/enums';
 import { RoomsService } from './rooms.service';
 import { RoomsRepository } from './rooms.repository';
 

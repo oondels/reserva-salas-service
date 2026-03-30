@@ -4,7 +4,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { BookingStatus, Role, RoomType } from '@prisma/client';
+import { BookingStatus, Role, RoomType } from '../../common/enums';
 import { BookingsService } from './bookings.service';
 import { BookingsRepository } from './bookings.repository';
 import { RoomsService } from '../rooms/rooms.service';

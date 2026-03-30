@@ -1,12 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BookingStatus } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Booking } from '../bookings/entities/booking.entity';
+import { Room } from '../rooms/entities/room.entity';
+import { BookingStatus } from '../../common/enums/booking-status.enum';
 
 @Injectable()
 export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Booking)
+    private readonly bookingRepo: Repository<Booking>,
+    @InjectRepository(Room)
+    private readonly roomRepo: Repository<Room>,
+  ) {}
 
   async getMetrics() {
     const now = new Date();
@@ -18,47 +26,35 @@ export class DashboardService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 
-    const [
-      bookingsToday,
-      bookingsThisMonth,
-      pendingApproval,
-      confirmedToday,
-      topRooms,
-    ] = await Promise.all([
-      this.prisma.booking.count({
-        where: {
-          startAt: { gte: startOfDay, lte: endOfDay },
-          status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-        },
-      }),
+    const [bookingsToday, bookingsThisMonth, pendingApproval, confirmedToday, totalRooms, topRooms] =
+      await Promise.all([
+        this.bookingRepo
+          .createQueryBuilder('b')
+          .where('b.start_at >= :startOfDay AND b.start_at <= :endOfDay', { startOfDay, endOfDay })
+          .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING] })
+          .getCount(),
 
-      this.prisma.booking.count({
-        where: {
-          startAt: { gte: startOfMonth, lte: endOfMonth },
-          status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-        },
-      }),
+        this.bookingRepo
+          .createQueryBuilder('b')
+          .where('b.start_at >= :startOfMonth AND b.start_at <= :endOfMonth', { startOfMonth, endOfMonth })
+          .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING] })
+          .getCount(),
 
-      this.prisma.booking.count({
-        where: { status: BookingStatus.PENDING },
-      }),
+        this.bookingRepo.count({ where: { status: BookingStatus.PENDING } }),
 
-      this.prisma.booking.count({
-        where: {
-          startAt: { gte: startOfDay, lte: endOfDay },
-          status: BookingStatus.CONFIRMED,
-        },
-      }),
+        this.bookingRepo
+          .createQueryBuilder('b')
+          .where('b.start_at >= :startOfDay AND b.start_at <= :endOfDay', { startOfDay, endOfDay })
+          .andWhere('b.status = :status', { status: BookingStatus.CONFIRMED })
+          .getCount(),
 
-      this.getTopRooms(startOfMonth, endOfMonth),
-    ]);
+        this.roomRepo.count({ where: { isActive: true } }),
 
-    const totalRooms = await this.prisma.room.count({ where: { isActive: true } });
-    const totalPossibleSlots = totalRooms;
+        this.getTopRooms(startOfMonth, endOfMonth),
+      ]);
+
     const occupancyRate =
-      totalPossibleSlots > 0
-        ? Math.round((confirmedToday / totalPossibleSlots) * 100)
-        : 0;
+      totalRooms > 0 ? Math.round((confirmedToday / totalRooms) * 100) : 0;
 
     this.logger.log('Métricas do dashboard consultadas');
 
@@ -72,22 +68,25 @@ export class DashboardService {
   }
 
   private async getTopRooms(startDate: Date, endDate: Date) {
-    const result = await this.prisma.booking.groupBy({
-      by: ['roomId'],
-      where: {
-        startAt: { gte: startDate, lte: endDate },
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-      },
-      _count: { roomId: true },
-      orderBy: { _count: { roomId: 'desc' } },
-      take: 5,
-    });
+    const result = await this.bookingRepo
+      .createQueryBuilder('b')
+      .select('b.room_id', 'roomId')
+      .addSelect('COUNT(b.id)', 'total')
+      .where('b.start_at >= :startDate AND b.start_at <= :endDate', { startDate, endDate })
+      .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING] })
+      .groupBy('b.room_id')
+      .orderBy('total', 'DESC')
+      .limit(5)
+      .getRawMany<{ roomId: string; total: string }>();
 
     const roomIds = result.map((r) => r.roomId);
-    const rooms = await this.prisma.room.findMany({
-      where: { id: { in: roomIds } },
-      select: { id: true, name: true, type: true },
-    });
+    if (roomIds.length === 0) return [];
+
+    const rooms = await this.roomRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.name', 'r.type'])
+      .where('r.id IN (:...roomIds)', { roomIds })
+      .getMany();
 
     return result.map((r) => {
       const room = rooms.find((rm) => rm.id === r.roomId);
@@ -95,7 +94,7 @@ export class DashboardService {
         roomId: r.roomId,
         roomName: room?.name ?? 'Desconhecida',
         roomType: room?.type ?? null,
-        totalBookings: r._count.roomId,
+        totalBookings: parseInt(r.total, 10),
       };
     });
   }

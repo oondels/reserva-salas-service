@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsInt, IsISO8601, IsOptional, IsUUID, Max, Min } from 'class-validator';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus } from '../../../common/enums';
 import { Type } from 'class-transformer';
 
 export class ReportFiltersDto {

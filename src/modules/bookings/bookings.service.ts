@@ -1,11 +1,17 @@
 import {
   ForbiddenException,
+  InternalServerErrorException,
   Injectable,
   Logger,
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { AdditionalRequestType, Booking, BookingStatus, Prisma, Role } from '@prisma/client';
+import {
+  AdditionalRequestType,
+  AdditionalStatus,
+  BookingStatus,
+  Role,
+} from '../../common/enums';
 import { randomUUID } from 'crypto';
 import { BookingsRepository } from './bookings.repository';
 import { RoomsService } from '../rooms/rooms.service';
@@ -17,6 +23,7 @@ import { CancelBookingDto, CancelMode } from './dto/cancel-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingConflictException } from '../../shared/exceptions/booking-conflict.exception';
 import { expandRecurrence } from '../../shared/utils/rrule.util';
+import { Booking } from './entities/booking.entity';
 
 @Injectable()
 export class BookingsService {
@@ -60,11 +67,11 @@ export class BookingsService {
     }
 
     // Reserva simples
-    let booking: Booking;
+    let booking: Booking | null;
     try {
       booking = await this.bookingsRepository.create(
         {
-          room: { connect: { id: room.id } },
+          roomId: room.id,
           userId: user.userId,
           userName: user.name,
           title: dto.title,
@@ -78,7 +85,7 @@ export class BookingsService {
           participantType: dto.participantType,
           invites: dto.invites ?? false,
           inviteStatus: dto.inviteStatus,
-          additionalItemsStatus: hasAdditional ? 'PENDING' : undefined,
+          additionalItemsStatus: hasAdditional ? AdditionalStatus.PENDING : undefined,
         },
         additionalTypes,
       );
@@ -87,6 +94,10 @@ export class BookingsService {
         throw new BookingConflictException();
       }
       throw err;
+    }
+
+    if (!booking) {
+      throw new InternalServerErrorException('Falha ao persistir reserva');
     }
 
     this.logger.log(`Reserva criada: ${booking.id} | status: ${status}`);
@@ -117,7 +128,7 @@ export class BookingsService {
 
     const occurrences = occurrenceSlots.map((slot) => ({
       data: {
-        room: { connect: { id: room.id } },
+        roomId: room.id,
         userId: user.userId,
         userName: user.name,
         title: dto.title,
@@ -133,8 +144,8 @@ export class BookingsService {
         participantType: dto.participantType,
         invites: dto.invites ?? false,
         inviteStatus: dto.inviteStatus,
-        additionalItemsStatus: hasAdditional ? 'PENDING' : undefined,
-      } as Prisma.BookingCreateInput,
+        additionalItemsStatus: hasAdditional ? AdditionalStatus.PENDING : undefined,
+      },
       additionalTypes,
     }));
 
@@ -272,6 +283,10 @@ export class BookingsService {
 
     const cancelled = await this.bookingsRepository.cancel(id, user.userId);
 
+    if (!cancelled) {
+      throw new NotFoundException(`Reserva com id "${id}" não encontrada`);
+    }
+
     void this.notifyService.send({
       to: [user.email],
       event: 'BOOKING_CANCELLED',
@@ -303,6 +318,10 @@ export class BookingsService {
       approvedAt: new Date(),
     });
 
+    if (!approved) {
+      throw new NotFoundException(`Reserva "${id}" não encontrada`);
+    }
+
     this.logger.log(`Reserva ${id} aprovada por ${user.userId}`);
 
     void this.notifyService.send({
@@ -332,6 +351,10 @@ export class BookingsService {
     const rejected = await this.bookingsRepository.update(id, {
       status: BookingStatus.REJECTED,
     });
+
+    if (!rejected) {
+      throw new NotFoundException(`Reserva "${id}" não encontrada`);
+    }
 
     this.logger.log(
       `Reserva ${id} rejeitada por ${user.userId}${reason ? `: ${reason}` : ''}`,

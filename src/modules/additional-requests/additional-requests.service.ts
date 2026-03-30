@@ -4,7 +4,7 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Role } from '@prisma/client';
+import { Role } from '../../common/enums';
 import { AdditionalRequestsRepository } from './additional-requests.repository';
 import { AdditionalRequestFiltersDto } from './dto/additional-request-filters.dto';
 import { UpdateAdditionalRequestDto } from './dto/update-additional-request.dto';

@@ -1,6 +1,6 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AdditionalStatus, Role } from '@prisma/client';
+import { AdditionalStatus, Role } from '../../common/enums';
 import { AdditionalRequestsService } from './additional-requests.service';
 import { AdditionalRequestsRepository } from './additional-requests.repository';
 import { AuthUser } from '../../shared/decorators/current-user.decorator';

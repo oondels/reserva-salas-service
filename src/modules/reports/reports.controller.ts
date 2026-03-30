@@ -6,7 +6,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role } from '../../common/enums';
 import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { ReportFiltersDto } from './dto/report-filters.dto';

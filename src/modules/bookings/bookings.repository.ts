@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { AdditionalRequestType, BookingStatus, Prisma } from '@prisma/client';
-import { PrismaService } from '../../prisma/prisma.service';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Booking } from './entities/booking.entity';
+import { AdditionalRequestItem } from '../additional-requests/entities/additional-request-item.entity';
+import { BookingStatus } from '../../common/enums/booking-status.enum';
+import { AdditionalRequestType } from '../../common/enums/additional-request-type.enum';
 
 export interface BookingFilters {
   roomId?: string;
@@ -14,135 +18,133 @@ export interface BookingFilters {
 
 @Injectable()
 export class BookingsRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Booking)
+    private readonly bookingRepo: Repository<Booking>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+  ) {}
 
   async findAll(filters: BookingFilters) {
     const { roomId, userId, status, startDate, endDate, page = 1, limit = 20 } = filters;
 
-    const where: Prisma.BookingWhereInput = {
-      ...(roomId && { roomId }),
-      ...(userId && { userId }),
-      ...(status && { status }),
-      ...(startDate && { startAt: { gte: startDate } }),
-      ...(endDate && { endAt: { lte: endDate } }),
-    };
+    const qb = this.bookingRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.room', 'room')
+      .leftJoinAndSelect('b.additionalItems', 'additionalItems');
 
-    const [data, total] = await Promise.all([
-      this.prisma.booking.findMany({
-        where,
-        include: { room: true, additionalItems: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { startAt: 'asc' },
-      }),
-      this.prisma.booking.count({ where }),
-    ]);
+    if (roomId) qb.andWhere('b.room_id = :roomId', { roomId });
+    if (userId) qb.andWhere('b.user_id = :userId', { userId });
+    if (status) qb.andWhere('b.status = :status', { status });
+    if (startDate) qb.andWhere('b.start_at >= :startDate', { startDate });
+    if (endDate) qb.andWhere('b.end_at <= :endDate', { endDate });
 
+    qb.orderBy('b.start_at', 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
     return { data, total };
   }
 
   async findById(id: string) {
-    return this.prisma.booking.findUnique({
+    return this.bookingRepo.findOne({
       where: { id },
-      include: { room: true, additionalItems: true },
+      relations: ['room', 'additionalItems'],
     });
   }
 
   async findByUserId(userId: string) {
-    return this.prisma.booking.findMany({
+    return this.bookingRepo.find({
       where: { userId },
-      include: { room: true, additionalItems: true },
-      orderBy: { startAt: 'asc' },
+      relations: ['room', 'additionalItems'],
+      order: { startAt: 'ASC' },
     });
   }
 
-  async findConflicts(
-    roomId: string,
-    startAt: Date,
-    endAt: Date,
-    excludeId?: string,
-  ) {
-    // FOR UPDATE lock para evitar race conditions — deve ser chamado dentro de $transaction
-    const result = await this.prisma.$queryRaw<{ id: string }[]>`
-      SELECT id FROM rh.bookings
-      WHERE room_id = ${roomId}
-        AND status IN ('CONFIRMED', 'PENDING')
-        AND start_at < ${endAt}
-        AND end_at > ${startAt}
-        ${excludeId ? Prisma.sql`AND id != ${excludeId}` : Prisma.empty}
-      FOR UPDATE
-    `;
-    return result;
+  async findConflicts(roomId: string, startAt: Date, endAt: Date, excludeId?: string) {
+    const qb = this.bookingRepo
+      .createQueryBuilder('b')
+      .select('b.id')
+      .where('b.room_id = :roomId', { roomId })
+      .andWhere('b.status IN (:...statuses)', { statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING] })
+      .andWhere('b.start_at < :endAt', { endAt })
+      .andWhere('b.end_at > :startAt', { startAt });
+
+    if (excludeId) {
+      qb.andWhere('b.id != :excludeId', { excludeId });
+    }
+
+    return qb.getMany();
   }
 
-  async create(data: Prisma.BookingCreateInput, additionalTypes: AdditionalRequestType[]) {
-    return this.prisma.$transaction(async (tx) => {
-      // Verificar conflito com lock dentro da transação
-      const conflicts = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM rh.bookings
-        WHERE room_id = ${(data.room as { connect: { id: string } }).connect.id}
-          AND status IN ('CONFIRMED', 'PENDING')
-          AND start_at < ${data.endAt}
-          AND end_at > ${data.startAt}
-        FOR UPDATE
-      `;
+  async create(
+    data: Partial<Booking> & { roomId: string },
+    additionalTypes: AdditionalRequestType[],
+  ) {
+    return this.dataSource.transaction(async (manager: EntityManager) => {
+      const conflicts = await manager.query<{ id: string }[]>(
+        `SELECT id FROM rh.bookings
+         WHERE room_id = $1
+           AND status IN ('CONFIRMED', 'PENDING')
+           AND start_at < $2
+           AND end_at > $3
+         FOR UPDATE`,
+        [data.roomId, data.endAt, data.startAt],
+      );
 
       if (conflicts.length > 0) {
         throw new Error('BOOKING_CONFLICT');
       }
 
-      const booking = await tx.booking.create({
-        data: {
-          ...data,
-          additionalItems:
-            additionalTypes.length > 0
-              ? {
-                  create: additionalTypes.map((type) => ({ type })),
-                }
-              : undefined,
-        },
-        include: { room: true, additionalItems: true },
-      });
+      const booking = manager.create(Booking, data);
+      const saved = await manager.save(Booking, booking);
 
-      return booking;
+      if (additionalTypes.length > 0) {
+        const items = additionalTypes.map((type) =>
+          manager.create(AdditionalRequestItem, { bookingId: saved.id, type }),
+        );
+        await manager.save(AdditionalRequestItem, items);
+      }
+
+      return manager.findOne(Booking, {
+        where: { id: saved.id },
+        relations: ['room', 'additionalItems'],
+      });
     });
   }
 
   async createMany(
-    occurrences: Array<{
-      data: Prisma.BookingCreateInput;
-      additionalTypes: AdditionalRequestType[];
-    }>,
+    occurrences: Array<{ data: Partial<Booking> & { roomId: string }; additionalTypes: AdditionalRequestType[] }>,
   ): Promise<{ count: number }> {
-    return this.prisma.$transaction(async (tx) => {
-      // Verificar conflitos com FOR UPDATE para TODAS as ocorrências antes de persistir qualquer uma
+    return this.dataSource.transaction(async (manager: EntityManager) => {
       for (const { data } of occurrences) {
-        const roomId = (data.room as { connect: { id: string } }).connect.id;
-        const conflicts = await tx.$queryRaw<{ id: string }[]>`
-          SELECT id FROM rh.bookings
-          WHERE room_id = ${roomId}
-            AND status IN ('CONFIRMED', 'PENDING')
-            AND start_at < ${data.endAt}
-            AND end_at > ${data.startAt}
-          FOR UPDATE
-        `;
+        const conflicts = await manager.query<{ id: string }[]>(
+          `SELECT id FROM rh.bookings
+           WHERE room_id = $1
+             AND status IN ('CONFIRMED', 'PENDING')
+             AND start_at < $2
+             AND end_at > $3
+           FOR UPDATE`,
+          [data.roomId, data.endAt, data.startAt],
+        );
+
         if (conflicts.length > 0) {
           throw new Error(`BOOKING_CONFLICT:${(data.startAt as Date).toISOString()}`);
         }
       }
 
-      // Persistir todas as ocorrências
       let count = 0;
       for (const { data, additionalTypes } of occurrences) {
-        await tx.booking.create({
-          data: {
-            ...data,
-            additionalItems:
-              additionalTypes.length > 0
-                ? { create: additionalTypes.map((type) => ({ type })) }
-                : undefined,
-          },
-        });
+        const booking = manager.create(Booking, data);
+        const saved = await manager.save(Booking, booking);
+
+        if (additionalTypes.length > 0) {
+          const items = additionalTypes.map((type) =>
+            manager.create(AdditionalRequestItem, { bookingId: saved.id, type }),
+          );
+          await manager.save(AdditionalRequestItem, items);
+        }
         count++;
       }
 
@@ -150,42 +152,34 @@ export class BookingsRepository {
     });
   }
 
-  async update(id: string, data: Prisma.BookingUpdateInput) {
-    return this.prisma.booking.update({
+  async update(id: string, data: Partial<Booking>) {
+    await this.bookingRepo.update(id, data);
+    return this.bookingRepo.findOne({
       where: { id },
-      data,
-      include: { room: true, additionalItems: true },
+      relations: ['room', 'additionalItems'],
     });
   }
 
   async cancel(id: string, cancelledBy: string) {
-    return this.prisma.booking.update({
+    await this.bookingRepo.update(id, {
+      status: BookingStatus.CANCELLED,
+      cancelledBy,
+      cancelledAt: new Date(),
+    });
+    return this.bookingRepo.findOne({
       where: { id },
-      data: {
-        status: BookingStatus.CANCELLED,
-        cancelledBy,
-        cancelledAt: new Date(),
-      },
-      include: { room: true, additionalItems: true },
+      relations: ['room', 'additionalItems'],
     });
   }
 
-  async cancelRecurrenceGroup(
-    recurrenceGroupId: string,
-    fromDate: Date,
-    cancelledBy: string,
-  ) {
-    return this.prisma.booking.updateMany({
-      where: {
-        recurrenceGroupId,
-        startAt: { gte: fromDate },
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-      },
-      data: {
-        status: BookingStatus.CANCELLED,
-        cancelledBy,
-        cancelledAt: new Date(),
-      },
-    });
+  async cancelRecurrenceGroup(recurrenceGroupId: string, fromDate: Date, cancelledBy: string) {
+    return this.bookingRepo
+      .createQueryBuilder()
+      .update(Booking)
+      .set({ status: BookingStatus.CANCELLED, cancelledBy, cancelledAt: new Date() })
+      .where('recurrence_group_id = :recurrenceGroupId', { recurrenceGroupId })
+      .andWhere('start_at >= :fromDate', { fromDate })
+      .andWhere('status IN (:...statuses)', { statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING] })
+      .execute();
   }
 }

@@ -1,6 +1,6 @@
 import { IsEnum, IsISO8601, IsOptional, IsUUID, IsInt, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus } from '../../../common/enums';
 import { Type } from 'class-transformer';
 
 export class BookingFiltersDto {

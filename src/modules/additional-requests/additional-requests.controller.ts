@@ -5,7 +5,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role } from '../../common/enums';
 import { AdditionalRequestsService } from './additional-requests.service';
 import { AdditionalRequestFiltersDto } from './dto/additional-request-filters.dto';
 import { UpdateAdditionalRequestDto } from './dto/update-additional-request.dto';

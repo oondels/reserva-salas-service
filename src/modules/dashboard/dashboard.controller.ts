@@ -5,7 +5,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role } from '../../common/enums';
 import { DashboardService } from './dashboard.service';
 import { Roles } from '../../shared/decorators/roles.decorator';
 

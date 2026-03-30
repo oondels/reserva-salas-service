@@ -1,6 +1,6 @@
 import { IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Resource, RoomType } from '@prisma/client';
+import { Resource, RoomType } from '../../../common/enums';
 import { Transform, Type } from 'class-transformer';
 
 export class RoomFiltersDto {

@@ -1,7 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { BookingStatus, Prisma } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as XLSX from 'xlsx';
-import { PrismaService } from '../../prisma/prisma.service';
+import { BookingStatus } from '../../common/enums';
+import { Booking } from '../bookings/entities/booking.entity';
 import { ReportFiltersDto } from './dto/report-filters.dto';
 import { RoomsUsageFiltersDto } from './dto/rooms-usage-filters.dto';
 
@@ -9,29 +11,39 @@ import { RoomsUsageFiltersDto } from './dto/rooms-usage-filters.dto';
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Booking)
+    private readonly bookingRepo: Repository<Booking>,
+  ) {}
 
   async getBookingsReport(filters: ReportFiltersDto) {
     const { status, roomId, userId, startDate, endDate, page = 1, limit = 20 } = filters;
 
-    const where: Prisma.BookingWhereInput = {
-      ...(status && { status }),
-      ...(roomId && { roomId }),
-      ...(userId && { userId }),
-      ...(startDate && { startAt: { gte: new Date(startDate) } }),
-      ...(endDate && { endAt: { lte: new Date(endDate) } }),
-    };
+    const qb = this.bookingRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.room', 'room');
 
-    const [data, total] = await Promise.all([
-      this.prisma.booking.findMany({
-        where,
-        include: { room: { select: { id: true, name: true, type: true, floor: true } } },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { startAt: 'desc' },
-      }),
-      this.prisma.booking.count({ where }),
-    ]);
+    if (status) {
+      qb.andWhere('b.status = :status', { status });
+    }
+    if (roomId) {
+      qb.andWhere('b.room_id = :roomId', { roomId });
+    }
+    if (userId) {
+      qb.andWhere('b.user_id = :userId', { userId });
+    }
+    if (startDate) {
+      qb.andWhere('b.start_at >= :startDate', { startDate: new Date(startDate) });
+    }
+    if (endDate) {
+      qb.andWhere('b.end_at <= :endDate', { endDate: new Date(endDate) });
+    }
+
+    qb.orderBy('b.start_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
 
     return { data, total, page, limit };
   }
@@ -66,19 +78,15 @@ export class ReportsService {
   async getRoomsUsage(filters: RoomsUsageFiltersDto) {
     const { startDate, endDate } = filters;
 
-    const bookings = await this.prisma.booking.findMany({
-      where: {
-        startAt: { gte: new Date(startDate) },
-        endAt: { lte: new Date(endDate) },
-        status: { in: [BookingStatus.CONFIRMED, BookingStatus.PENDING] },
-      },
-      select: {
-        roomId: true,
-        startAt: true,
-        endAt: true,
-        room: { select: { id: true, name: true, type: true, floor: true } },
-      },
-    });
+    const bookings = await this.bookingRepo
+      .createQueryBuilder('b')
+      .leftJoinAndSelect('b.room', 'room')
+      .where('b.start_at >= :startDate', { startDate: new Date(startDate) })
+      .andWhere('b.end_at <= :endDate', { endDate: new Date(endDate) })
+      .andWhere('b.status IN (:...statuses)', {
+        statuses: [BookingStatus.CONFIRMED, BookingStatus.PENDING],
+      })
+      .getMany();
 
     const usageMap = new Map<
       string,

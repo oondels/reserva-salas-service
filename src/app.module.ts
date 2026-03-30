@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { HttpModule } from '@nestjs/axios';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
-import { PrismaModule } from './prisma/prisma.module';
+import { DatabaseModule } from './database/database.module';
 import { SharedModule } from './shared/shared.module';
 import { HealthModule } from './health/health.module';
 import { RoomsModule } from './modules/rooms/rooms.module';
@@ -32,7 +32,7 @@ import { envValidationSchema } from './config/env.validation';
       ],
     }),
     HttpModule,
-    PrismaModule,
+    DatabaseModule,
     SharedModule,
     HealthModule,
     RoomsModule,

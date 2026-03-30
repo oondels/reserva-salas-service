@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { AdditionalStatus } from '@prisma/client';
+import { AdditionalStatus } from '../../../common/enums';
 
 export class UpdateAdditionalRequestDto {
   @ApiProperty({

@@ -4,11 +4,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import { Role, Room } from '@prisma/client';
+import { Role } from '../../common/enums';
 import { RoomsRepository } from './rooms.repository';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { RoomFiltersDto } from './dto/room-filters.dto';
+import { Room } from './entities/room.entity';
 
 @Injectable()
 export class RoomsService {

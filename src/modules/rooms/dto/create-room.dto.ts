@@ -8,7 +8,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Resource, Role, RoomType } from '@prisma/client';
+import { Resource, Role, RoomType } from '../../../common/enums';
 
 export class CreateRoomDto {
   @ApiProperty({ example: 'Sala Alfa' })

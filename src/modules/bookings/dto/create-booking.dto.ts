@@ -11,7 +11,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AdditionalRequestType, InviteStatus, ParticipantType } from '@prisma/client';
+import { AdditionalRequestType, InviteStatus, ParticipantType } from '../../../common/enums';
 
 export class CreateBookingDto {
   @ApiProperty()
